@@ -1,19 +1,17 @@
-import { useState } from 'react'
-import './App.css'
-import styles from './styles/home.module.css'
+import { useState } from "react";
+import "./App.css";
+import styles from "./styles/home.module.css";
+import { BrowserRouter as Router } from "react-router-dom";
+import AppRoutes from "./components/Routes";
+
 function App() {
-  const [count, setCount] = useState(0)
+  const [count, setCount] = useState(0);
 
   return (
-    <>
-      <div className={styles.head}>
-        Car pooling
-      </div>
-      <div id={styles.red} className={styles.button}>Reguster for car pooling</div>
-      <div id={styles.green} className={styles.button}>Check available pooling</div>
-
-    </>
-  )
+    <Router>
+      <AppRoutes />
+    </Router>
+  );
 }
 
-export default App
+export default App;
