@@ -1,24 +1,55 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  registerStart,
+  registerSuccess,
+  registerFailure,
+} from "../redux/authSlice";
 import styles from "../styles/authentication.module.css";
+import axios from "axios";
+
+const axiosBridged = axios.create({
+  baseURL: import.meta.env.VITE_BASE_API_URL,
+  withCredentials: true,
+});
+
+axiosBridged.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      window.location.href = "/logout";
+    }
+    return Promise.reject(error);
+  }
+);
 
 function RegistrationPage() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const { register } = useAuth();
+  const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { loading, error } = useSelector((state) => state.auth);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (password !== confirmPassword) {
-      alert("Passwords do not match!");
+      dispatch(registerFailure("Passwords do not match!"));
       return;
     }
-    if (register(username, email, password)) {
+    dispatch(registerStart());
+    try {
+      const response = await axiosBridged.post("/auth/register", {
+        username,
+        email,
+        password,
+      });
+      dispatch(registerSuccess(response.data));
       navigate("/");
+    } catch (err) {
+      dispatch(registerFailure(err.response?.data?.message || err.message));
     }
   };
 
@@ -70,9 +101,10 @@ function RegistrationPage() {
             onChange={(e) => setConfirmPassword(e.target.value)}
           />
         </div>
-        <button type="submit" className={styles.button}>
-          Register
+        <button type="submit" className={styles.button} disabled={loading}>
+          {loading ? "Registering..." : "Register"}
         </button>
+        {error && <p className={styles.error}>{error}</p>}
       </form>
       <p className={styles.switchAuth}>
         Already have an account? <a href="/login">Login here</a>
